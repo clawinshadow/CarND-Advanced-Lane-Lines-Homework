@@ -30,7 +30,9 @@ The goals / steps of this project are the following:
 ### Camera Calibration
 
 The code for this step is contained in lines 8 through 70 of the file called `pipepline.py`, in which defined 2 functions named `get_calibration_data()` and `calc_undistort()`
-1. In `get_calibration_data()`, it prepares data (imgpoints & objpoints) for camera calibration. They were generated when I traverse all the images in the `camera_cal` folder. The object points are the same for each iteration, because they are the (x, y, z) coordinates of the chessboard corners in the real world, thus `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image (only the `calibration1.jpg` failed). The image points are different for each iteration, it represents the corners detected in each different image, so `imgpoints` will be appended with the (x, y) pixel position of each of the corners with each successful chessboard detection.
+1. In `get_calibration_data()`, it prepares data (imgpoints & objpoints) for camera calibration. They were generated when I traverse all the images in the `camera_cal` folder. 
+   * The __object points__ are the same for each iteration, because they are the (x, y, z) coordinates of the chessboard corners in the real world, thus `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image (only the `calibration1.jpg` failed). 
+   * The __image points__ are different for each iteration, it represents the corners detected in each different image, so `imgpoints` will be appended with the (x, y) pixel position of each of the corners with each successful chessboard detection.
 2. In `calc_undistort()` I used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function, then applied this distortion correction to the test image `calibration1.jpg` using the `cv2.undistort()` function and save it into the `output_images` folder, the result as following:
 
 ![alt text][image1]
