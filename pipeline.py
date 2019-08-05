@@ -170,9 +170,13 @@ class Line():
         # was the line detected in the last iteration?
         self.detected = False
 
+        self.recent_xfitted = []
+        self.best_xfitted = None
+
         self.recent_fit = []
         #polynomial coefficients averaged over the last n iterations
         self.best_fit = None
+
         #polynomial coefficients for the most recent fit
         self.current_fit = [np.array([False])]
         #radius of curvature of the line in some units
@@ -185,6 +189,38 @@ class Line():
         self.allx = None
         #y values for detected line pixels
         self.ally = None
+
+        # cache the latest 20 results
+        self.N = 20
+
+    def update(self, fit_coefficients, fit_x, fit_y, offset, radius):
+        # Add current fit into cache
+        self.current_fit = fit_coefficients
+        if self.best_fit is None:
+            self.best_fit = self.current_fit
+        # Validate current fit
+        self.diffs = self.current_fit - self.best_fit
+        self.detected = np.sum(np.absolute(self.diffs)) < 100
+        print(np.sum(np.absolute(self.diffs)))
+        # Update the reset members
+        if self.detected is True:
+            # Add current polynomial fit into the cache list
+            self.recent_fit.append(fit_coefficients)
+            self.recent_fit = self.recent_fit[-self.N:]  # only retain the latest N records
+            self.best_fit = np.average(np.array(self.recent_fit), axis=0)
+            # Add current fitted x values into the cache list
+            self.recent_xfitted.append(fit_x)
+            self.recent_xfitted = self.recent_xfitted[-self.N:]
+            self.best_xfitted = np.average(np.array(self.recent_xfitted), axis=0)
+            # Add curvature radius and vehicle offset into the cache
+            self.line_base_pos = offset
+            self.radius_of_curvature = radius
+            # Prepare data to fill polygon
+            self.allx = fit_x
+            self.ally = fit_y
+        else:
+            # If current fit failed, use the prior valid fitted result
+            self.allx = self.best_xfitted
 
 
 def fit_polynomial_ex(binary_warped, xm_per_pix=1, ym_per_pix=1):
@@ -202,56 +238,28 @@ def fit_polynomial_ex(binary_warped, xm_per_pix=1, ym_per_pix=1):
     right_fit = np.polyfit(righty, rightx, 2)
     # Get plot data
     ploty, left_fitx, right_fitx = get_plot_data(binary_warped, left_fit, right_fit)
+    # Calculate curvature radius and vehicle offset
+    left_fit_cr = np.polyfit(lefty * ym_per_pix, leftx * xm_per_pix, 2)
+    right_fit_cr = np.polyfit(righty * ym_per_pix, rightx * xm_per_pix, 2)
+    left_x_base, right_x_base = histogram_peaks(binary_warped)
+    offset, left_radius, right_radius = calc_curvature_offset(binary_warped, left_x_base, right_x_base,
+                                                              left_fit_cr, right_fit_cr)
 
-    left_line_cache.current_fit = left_fit
-    if left_line_cache.best_fit is None:
-        left_line_cache.best_fit = left_fit
-    right_line_cache.current_fit = right_fit
-    if right_line_cache.best_fit is None:
-        right_line_cache.best_fit = right_fit
-
-    # validate current fit
-    left_line_cache.diffs = left_line_cache.current_fit - left_line_cache.best_fit
-    left_line_cache.detected = np.sum(np.absolute(left_line_cache.diffs)) < 100
-    print(np.sum(np.absolute(left_line_cache.diffs)))
-    right_line_cache.diffs = right_line_cache.current_fit - right_line_cache.best_fit
-    right_line_cache.detected = np.sum(np.absolute(right_line_cache.diffs)) < 100
-
-    N = 20 # cache the latest 20 results
-    if left_line_cache.detected is True:
-        left_line_cache.recent_fit.append(left_fitx)
-        left_line_cache.recent_fit = left_line_cache.recent_fit[-N:]
-        left_line_cache.best_fit = np.average(np.array(left_line_cache.recent_fit), axis=0)
+    # Update left Line() instance
+    left_line_cache.update(left_fit, left_fitx, ploty, offset, left_radius)
+    # Update right Line() instance
+    right_line_cache.update(right_fit, right_fitx, ploty, -offset, right_radius)
 
 
-
-
-
-def process(image):
-    """
-    Function to process each image of the video
-    :param image: original image from the video
-    :return: marked image
-    """
-    undistorted = calc_undistort(image, objpts, imgpts)
-    combo_binary = hls_gradient_filter(undistorted)
-    warped_binary = cv.warpPerspective(combo_binary, M,
-                                       (combo_binary.shape[1], combo_binary.shape[0]), flags=cv.INTER_LINEAR)
-
-    # Fit polynomial in pixel space
-    left_fit, right_fit, out_img = fit_polynomial(warped_binary)
-    # Get plot data
-    ploty, left_fitx, right_fitx = get_plot_data(warped_binary, left_fit, right_fit)
-
-    ## Visualization ##
+def mark_image(undistorted, warped_binary):
     # 1. Fill the polygon
     # Create an image to draw the lines on
     warp_zero = np.zeros_like(warped_binary).astype(np.uint8)
     color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
 
     # Recast the x and y points into usable format for cv2.fillPoly()
-    pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
-    pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
+    pts_left = np.array([np.transpose(np.vstack([left_line_cache.allx, left_line_cache.ally]))])
+    pts_right = np.array([np.flipud(np.transpose(np.vstack([right_line_cache.allx, right_line_cache.ally])))])
     pts = np.hstack((pts_left, pts_right))
 
     # Draw the lane onto the warped blank image
@@ -263,13 +271,8 @@ def process(image):
     result = cv.addWeighted(undistorted, 1, newwarp, 0.3, 0)
 
     # Add text onto the result image
-    left_x_base, right_x_base = histogram_peaks(warped_binary)
-    xm_per_pix = 3.7 / 700
-    ym_per_pix = 30 / 720
-    left_fit_cr, right_fit_cr, out_img = fit_polynomial(warped_binary, xm_per_pix, ym_per_pix)
-    offset, left_radius, right_radius = calc_curvature_offset(warped_binary, left_x_base, right_x_base,
-                                                              left_fit_cr, right_fit_cr)
-    radius = (left_radius + right_radius) / 2
+    offset = left_line_cache.line_base_pos
+    radius = (left_line_cache.radius_of_curvature + right_line_cache.radius_of_curvature) / 2
     radiusText = str.format("Radius of Curvature = {0:.1f}(m)", radius)
     if offset < 0:
         offsetText = str.format("Vehicle is {0:.2f}m left of center", abs(offset))
@@ -280,13 +283,34 @@ def process(image):
 
     return result
 
+def process(image):
+    """
+    Function to process each image of the video
+    :param image: original image from the video
+    :return: marked image
+    """
+    # Step 1: undistort the original image, using camera calibration data
+    undistorted = calc_undistort(image, objpts, imgpts)
+    # Step 2: use a filter of gradient and hls color space together, to generate a binary threshold image
+    combo_binary = hls_gradient_filter(undistorted)
+    # Step 3: use perspective transform to generate a binary image of bird's eye view
+    warped_binary = cv.warpPerspective(combo_binary, M,
+                                       (combo_binary.shape[1], combo_binary.shape[0]), flags=cv.INTER_LINEAR)
+
+    # Step 4: fit a polynomial curve for each lane line, and save data into the Line() instances
+    fit_polynomial_ex(warped_binary, x_meters_per_pix, y_meters_per_pix)
+
+    # Step 5: mark the image with fit results
+    result = mark_image(undistorted, warped_binary)
+    return result
+
 
 # Prepare data for image processing
 # 1. Extract data from camera calibration
 objpts, imgpts = get_calibration_data("./camera_cal/calibration*.jpg")
 # 2. Define hard-code variables
-xm_per_pix = 3.7 / 700
-ym_per_pix = 30 / 720
+x_meters_per_pix = 3.7 / 700
+y_meters_per_pix = 30 / 720
 img = mpimg.imread("./test_images/test5.jpg")
 img_size = img.shape
 src = np.float32(
@@ -306,9 +330,9 @@ Minv = cv.getPerspectiveTransform(dst, src)
 left_line_cache = Line()
 right_line_cache = Line()
 
-
+# Generate marked video
 white_output = 'project_video_marked.mp4'
 # clip1 = VideoFileClip("project_video.mp4").subclip(0,5)
 clip1 = VideoFileClip("project_video.mp4")
-white_clip = clip1.fl_image(process) #NOTE: this function expects color images!!
+white_clip = clip1.fl_image(process)
 white_clip.write_videofile(white_output, audio=False)
