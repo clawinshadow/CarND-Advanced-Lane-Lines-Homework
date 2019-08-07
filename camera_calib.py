@@ -6,7 +6,6 @@ import glob
 def get_calibration_data(directory):
     # Read in the list of calibration images
     images = glob.glob(directory)
-    print(len(images))
 
     objpoints = []  # 3D points coordinates in real world space
     imgpoints = []  # 2D points coordinates in image place
@@ -50,10 +49,10 @@ def get_warp_matrix(img, inv=False):
     # hard-code src and dst points
     img_size = img.shape
     src = np.float32(
-        [[(img_size[1] / 2) - 43, img_size[0] / 2 + 88],
-         [((img_size[1] / 6) - 25), img_size[0]],
-         [(img_size[1] * 5 / 6) + 65, img_size[0]],
-         [(img_size[1] / 2 + 53), img_size[0] / 2 + 88]])
+        [[(img_size[1] / 2) - 55, img_size[0] / 2 + 100],
+         [((img_size[1] / 6) - 10), img_size[0]],
+         [(img_size[1] * 5 / 6) + 60, img_size[0]],
+         [(img_size[1] / 2 + 55), img_size[0] / 2 + 100]])
     dst = np.float32(
         [[(img_size[1] / 4), 0],
          [(img_size[1] / 4), img_size[0]],
@@ -65,13 +64,13 @@ def get_warp_matrix(img, inv=False):
     else:
         M = cv.getPerspectiveTransform(src, dst)
 
-    return M
+    return M, src, dst
 
 
 def warper(img):
     """
     Perform a perspective transform
     """
-    M = get_warp_matrix(img)
+    M, src, dst = get_warp_matrix(img)
     warped = cv.warpPerspective(img, M, (img.shape[1], img.shape[0]), flags=cv.INTER_LINEAR)
-    return warped
+    return warped, src, dst

@@ -75,9 +75,6 @@ def hls_thresh(img, channel='s', thresh=(0, 255)):
     # Convert to HLS color space
     hls = cv.cvtColor(img, cv.COLOR_RGB2HLS)
 
-    # debug
-    # plt.imshow(hls[:, :, 1], cmap='gray')
-
     # Select channel
     if channel == 'h':
         channel_data = hls[:, :, 0]
@@ -98,17 +95,20 @@ def hls_gradient_filter(img):
     sobel_x_binary = abs_sobel_thresh(img, orient='x', thresh=(10, 120))
 
     # Apply y-gradient filter
-    sobel_y_binary = abs_sobel_thresh(img, orient='y', thresh=(0, 255))
+    sobel_y_binary = abs_sobel_thresh(img, orient='y', thresh=(0, 250))
 
     # Apply gradient direction filter
-    # direction_binary = direction_thresh(img, 3, thresh=(np.pi/6, np.pi/2))
+    # direction_binary = direction_thresh(img, 3, thresh=(np.pi/5, np.pi * 7/18))
+
+    # Apply gradient magnitude filter
+    # mag_binary = magnitude_thresh(img, 3, (10, 120))
 
     # Combine gradient-based filter
     grad_binary = np.zeros_like(sobel_x_binary)
     grad_binary[(sobel_y_binary == 1) & (sobel_x_binary == 1)] = 1
 
     # Apply s-channel filter in hls color space
-    s_binary = hls_thresh(img, channel='s', thresh=(150, 255))
+    s_binary = hls_thresh(img, channel='s', thresh=(100, 255))
 
     # Apply l-channel filter in hls color space
     l_binary = hls_thresh(img, channel='l', thresh=(50, 255))
@@ -125,16 +125,4 @@ def hls_gradient_filter(img):
     # Green represents sobel_x_binary = 1, Blue represents s_binary = 1
     color_binary = np.dstack((np.zeros_like(hls_binary), grad_binary, hls_binary)) * 255
 
-
-    # plotting
-    # f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 6))
-    # ax1.set_title('Original image')
-    # ax1.imshow(img)
-    #
-    # ax2.set_title('Stacked thresholds')
-    # ax2.imshow(color_binary)
-    #
-    # ax3.set_title('Combined S channel and gradient thresholds')
-    # ax3.imshow(combined_binary, cmap='gray')
-
-    return combined_binary
+    return combined_binary, color_binary
