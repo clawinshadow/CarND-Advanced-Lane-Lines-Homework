@@ -91,25 +91,25 @@ objpts, imgpts = get_calibration_data("./camera_cal/calibration*.jpg")
 # -------------------------- Task 5 ----------------------------------
 
 # Pipeline: 4. identify lane-line pixels and fit their positions with a polynomial
-img = mpimg.imread("./test_images/test5.jpg")
-undistorted = calc_undistort(img, objpts, imgpts)
-combo_binary, color_binary = hls_gradient_filter(undistorted)
-warped_binary, src, dst = warper(combo_binary)
-
-
-left_fit_prior, right_fit_prior, out_img = fit_polynomial(warped_binary, 1, 1, True)
-result = search_around_poly(warped_binary, left_fit_prior, right_fit_prior, True)
-
-plt.imshow(result)
-plt.savefig("./output_images/fit_test5.png")
-plt.show()
+# img = mpimg.imread("./test_images/test5.jpg")
+# undistorted = calc_undistort(img, objpts, imgpts)
+# combo_binary, color_binary = hls_gradient_filter(undistorted)
+# warped_binary, src, dst = warper(combo_binary)
+#
+#
+# left_fit_prior, right_fit_prior, out_img = fit_polynomial(warped_binary, 1, 1, True)
+# result = search_around_poly(warped_binary, left_fit_prior, right_fit_prior, True)
+#
+# plt.imshow(result)
+# plt.savefig("./output_images/fit_test5.png")
+# plt.show()
 
 # -------------------------- Task 6 ----------------------------------
 
 # # Pipeline 5: calculate the radius of curvature of the lane and the offset of the vehicle
 # img = mpimg.imread("./test_images/test5.jpg")
 # undistorted = calc_undistort(img, objpts, imgpts)
-# combo_binary = hls_gradient_filter(undistorted)
+# combo_binary, color_binary = hls_gradient_filter(undistorted)
 # warped_binary, src, dst = warper(combo_binary)
 #
 # left_x_base, right_x_base = histogram_peaks(warped_binary)
@@ -123,55 +123,55 @@ plt.show()
 # -------------------------- Task 7 ----------------------------------
 
 # Pipeline 6: result plotted back down onto the road
-# img = mpimg.imread("./test_images/test1.jpg")
-# undistorted = calc_undistort(img, objpts, imgpts)
-# combo_binary = hls_gradient_filter(undistorted)
-# warped_binary = warper(combo_binary)
-#
-# # Fit polynomial in pixel space
-# left_fit, right_fit, out_img = fit_polynomial(warped_binary)
-# # Get plot data
-# ploty, left_fitx, right_fitx = get_plot_data(warped_binary, left_fit, right_fit)
-#
-# ## Visualization ##
-# # 1. Fill the polygon
-# # Create an image to draw the lines on
-# warp_zero = np.zeros_like(warped_binary).astype(np.uint8)
-# color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
-#
-# # Recast the x and y points into usable format for cv2.fillPoly()
-# pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
-# pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
-# pts = np.hstack((pts_left, pts_right))
-#
-# # Draw the lane onto the warped blank image
-# cv.fillPoly(color_warp, np.int_([pts]), (0, 255, 0))
-#
-# # Warp the blank back to original image space using inverse perspective matrix (Minv)
-# Minv = get_warp_matrix(warped_binary, inv=True)
-# newwarp = cv.warpPerspective(color_warp, Minv, (warped_binary.shape[1], warped_binary.shape[0]))
-# # Combine the result with the original image
-# result = cv.addWeighted(undistorted, 1, newwarp, 0.3, 0)
-#
-# # Add text onto the result image
-# left_x_base, right_x_base = histogram_peaks(warped_binary)
-# xm_per_pix = 3.7 / 700
-# ym_per_pix = 30 / 720
-# left_fit_cr, right_fit_cr, out_img = fit_polynomial(warped_binary, xm_per_pix, ym_per_pix)
-# offset, left_radius, right_radius = calc_curvature_offset(warped_binary, left_x_base, right_x_base,
-#                                                           left_fit_cr, right_fit_cr)
-# radius = (left_radius + right_radius) / 2
-# radiusText = str.format("Radius of Curvature = {0:.1f}(m)", radius)
-# if offset < 0:
-#     offsetText = str.format("Vehicle is {0:.2f}m left of center", abs(offset))
-# else:
-#     offsetText = str.format("Vehicle is {0:.2f}m right of center", abs(offset))
-# cv.putText(result, radiusText, (100, 50), cv.FONT_HERSHEY_SIMPLEX, 2, color=[255, 255, 255], thickness=2)
-# cv.putText(result, offsetText, (100, 100), cv.FONT_HERSHEY_SIMPLEX, 2, color=[255, 255, 255], thickness=2)
-#
-# plt.imshow(result)
-#
-# plt.show()
+img = mpimg.imread("./test_images/test5.jpg")
+undistorted = calc_undistort(img, objpts, imgpts)
+combo_binary, color_binary = hls_gradient_filter(undistorted)
+warped_binary, src, dst = warper(combo_binary)
+
+# Fit polynomial in pixel space
+left_fit, right_fit, out_img = fit_polynomial(warped_binary)
+# Get plot data
+ploty, left_fitx, right_fitx = get_plot_data(warped_binary, left_fit, right_fit)
+
+## Visualization ##
+# 1. Fill the polygon
+# Create an image to draw the lines on
+warp_zero = np.zeros_like(warped_binary).astype(np.uint8)
+color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
+
+# Recast the x and y points into usable format for cv2.fillPoly()
+pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
+pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
+pts = np.hstack((pts_left, pts_right))
+
+# Draw the lane onto the warped blank image
+cv.fillPoly(color_warp, np.int_([pts]), (0, 255, 0))
+
+# Warp the blank back to original image space using inverse perspective matrix (Minv)
+Minv, src, dst = get_warp_matrix(warped_binary, inv=True)
+newwarp = cv.warpPerspective(color_warp, Minv, (warped_binary.shape[1], warped_binary.shape[0]))
+# Combine the result with the original image
+result = cv.addWeighted(undistorted, 1, newwarp, 0.3, 0)
+
+# Add text onto the result image
+left_x_base, right_x_base = histogram_peaks(warped_binary)
+xm_per_pix = 3.7 / 700
+ym_per_pix = 30 / 720
+left_fit_cr, right_fit_cr, out_img = fit_polynomial(warped_binary, xm_per_pix, ym_per_pix)
+offset, left_radius, right_radius = calc_curvature_offset(warped_binary, left_x_base, right_x_base,
+                                                          left_fit_cr, right_fit_cr)
+radius = (left_radius + right_radius) / 2
+radiusText = str.format("Radius of Curvature = {0:.1f}(m)", radius)
+if offset < 0:
+    offsetText = str.format("Vehicle is {0:.2f}m left of center", abs(offset))
+else:
+    offsetText = str.format("Vehicle is {0:.2f}m right of center", abs(offset))
+cv.putText(result, radiusText, (100, 80), cv.FONT_HERSHEY_SIMPLEX, 2, color=[255, 255, 255], thickness=2)
+cv.putText(result, offsetText, (100, 130), cv.FONT_HERSHEY_SIMPLEX, 2, color=[255, 255, 255], thickness=2)
+
+plt.imshow(result)
+plt.imsave("./output_images/final_output_test5.png", result)
+plt.show()
 
 # -------------------------- Task 8 ----------------------------------
 
