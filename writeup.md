@@ -136,7 +136,15 @@ Final output image as below:
 
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's a [link to my video result](./project_video.mp4)
+The pipeline for video output is almost the same as for single image, except I define a Line() class to track each lane detection status. 
+
+At each iteration, the Line() instance will record the intermediate data of current detection, including current polynomial fit, current curvature radius, vehicle position, plot data of (x, y) coordinates..etc, and maintain a list of the latest 15 fit results, in order to calculate the best fit of piror 15 frames. 
+
+Then it will validate current fit, use a simple criteria that sum the abs(diffs) of current fit and prior best fit. If it is greater than 50, it would possibly be a failed detection, then I will use the prior best fit data to render the lane line area.
+
+Codes at `Task 8` section in `pipeline.py`, the video result is saved in the root directory
+
+Here's a [link to my video result](./project_video_marked.mp4)
 
 ---
 
@@ -144,4 +152,6 @@ Here's a [link to my video result](./project_video.mp4)
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+1. I spent a lot of time to find a best combination of gradient & hls threshold to generate a best binary image, but still a lot of noise in the result, even though it slightly impacts the final result. There could be a better combination of various threshold functions and parameters to generate a perfect binary image.
+2. About the perspective transform, we hard-code the src & dst points to calculate the transform matrices. It based on personal experience and may not suitable for different scenarios, we'd better choose the points automatically based on a smart algorithm, may seek help from deep learning or else.
+3. During the process of generating video output, despite the final output looks well, about 15% frames were detected fail. The program use the prior best fit to ignore the wrong detection, but we could not always depend on this work-around mechanism to generate a good enough result. Need to improve the detection precision basically.
