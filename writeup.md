@@ -18,7 +18,7 @@ The goals / steps of this project are the following:
 [image3]: ./output_images/binary_straight_lines1.png "Binary Example"
 [image4]: ./output_images/warped_test2.png "Warp Example"
 [image5]: ./output_images/fit_test5.png "Fit Visual"
-[image6]: ./examples/example_output.jpg "Output"
+[image6]: ./output_images/final_output_test5.png "Output"
 [video1]: ./project_video.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
@@ -111,12 +111,23 @@ Codes at `Task 5` section in `pipeline.py`, result image as following
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-I did this in lines # through # in my code in `my_other_file.py`
+I did this in the `calc_curvature_offset()` function in my code in `curve_fitting.py`, steps as below:
+1. First we need to map the pixels to real world meters, I use the hard-coded xm_per_pix = 3.7/700, ym_per_pix = 30/720 as recommended
+2. Fix the polynomial with coordinates of real world meters
+3. Calculate the curvature using the equation provided in the lesson
+4. Calculate the vehicle position: I assume the midpoint (640 in pixels) is the position of the camera, that is also the center position of the vehicle, then average the left_x_base & right_x_base, which calculated from `histogram_peaks()`, get the center of lane. Compare these 2 centers, that's the offset of vehicle position respect to lane center.
+
+Codes at `Task 6` section in `pipeline.py`, no result image, just print out the offset, and 2 radius of curvature.
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
+Codes at `Task 7` section in `pipeline.py`, steps as below:
+1. Get the polynomial result in pixel space, and then use `cv2.fillpoly()` to fill the detected area of lane
+2. Fit the polynomial in real world space again, calculate the radius of curvatures, the vehicle position.
+3. Use `cv2.putText()` to print the result on top center of image
 
+
+Final output image as below:
 ![alt text][image6]
 
 ---
