@@ -123,55 +123,55 @@ objpts, imgpts = get_calibration_data("./camera_cal/calibration*.jpg")
 # -------------------------- Task 7 ----------------------------------
 
 # Pipeline 6: result plotted back down onto the road
-img = mpimg.imread("./test_images/test5.jpg")
-undistorted = calc_undistort(img, objpts, imgpts)
-combo_binary, color_binary = hls_gradient_filter(undistorted)
-warped_binary, src, dst = warper(combo_binary)
+# img = mpimg.imread("./test_images/test5.jpg")
+# undistorted = calc_undistort(img, objpts, imgpts)
+# combo_binary, color_binary = hls_gradient_filter(undistorted)
+# warped_binary, src, dst = warper(combo_binary)
 
-# Fit polynomial in pixel space
-left_fit, right_fit, out_img = fit_polynomial(warped_binary)
-# Get plot data
-ploty, left_fitx, right_fitx = get_plot_data(warped_binary, left_fit, right_fit)
+# # Fit polynomial in pixel space
+# left_fit, right_fit, out_img = fit_polynomial(warped_binary)
+# # Get plot data
+# ploty, left_fitx, right_fitx = get_plot_data(warped_binary, left_fit, right_fit)
 
-## Visualization ##
-# 1. Fill the polygon
-# Create an image to draw the lines on
-warp_zero = np.zeros_like(warped_binary).astype(np.uint8)
-color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
+# ## Visualization ##
+# # 1. Fill the polygon
+# # Create an image to draw the lines on
+# warp_zero = np.zeros_like(warped_binary).astype(np.uint8)
+# color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
 
-# Recast the x and y points into usable format for cv2.fillPoly()
-pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
-pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
-pts = np.hstack((pts_left, pts_right))
+# # Recast the x and y points into usable format for cv2.fillPoly()
+# pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
+# pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
+# pts = np.hstack((pts_left, pts_right))
 
-# Draw the lane onto the warped blank image
-cv.fillPoly(color_warp, np.int_([pts]), (0, 255, 0))
+# # Draw the lane onto the warped blank image
+# cv.fillPoly(color_warp, np.int_([pts]), (0, 255, 0))
 
-# Warp the blank back to original image space using inverse perspective matrix (Minv)
-Minv, src, dst = get_warp_matrix(warped_binary, inv=True)
-newwarp = cv.warpPerspective(color_warp, Minv, (warped_binary.shape[1], warped_binary.shape[0]))
-# Combine the result with the original image
-result = cv.addWeighted(undistorted, 1, newwarp, 0.3, 0)
+# # Warp the blank back to original image space using inverse perspective matrix (Minv)
+# Minv, src, dst = get_warp_matrix(warped_binary, inv=True)
+# newwarp = cv.warpPerspective(color_warp, Minv, (warped_binary.shape[1], warped_binary.shape[0]))
+# # Combine the result with the original image
+# result = cv.addWeighted(undistorted, 1, newwarp, 0.3, 0)
 
-# Add text onto the result image
-left_x_base, right_x_base = histogram_peaks(warped_binary)
-xm_per_pix = 3.7 / 700
-ym_per_pix = 30 / 720
-left_fit_cr, right_fit_cr, out_img = fit_polynomial(warped_binary, xm_per_pix, ym_per_pix)
-offset, left_radius, right_radius = calc_curvature_offset(warped_binary, left_x_base, right_x_base,
-                                                          left_fit_cr, right_fit_cr)
-radius = (left_radius + right_radius) / 2
-radiusText = str.format("Radius of Curvature = {0:.1f}(m)", radius)
-if offset < 0:
-    offsetText = str.format("Vehicle is {0:.2f}m left of center", abs(offset))
-else:
-    offsetText = str.format("Vehicle is {0:.2f}m right of center", abs(offset))
-cv.putText(result, radiusText, (100, 80), cv.FONT_HERSHEY_SIMPLEX, 2, color=[255, 255, 255], thickness=2)
-cv.putText(result, offsetText, (100, 130), cv.FONT_HERSHEY_SIMPLEX, 2, color=[255, 255, 255], thickness=2)
+# # Add text onto the result image
+# left_x_base, right_x_base = histogram_peaks(warped_binary)
+# xm_per_pix = 3.7 / 700
+# ym_per_pix = 30 / 720
+# left_fit_cr, right_fit_cr, out_img = fit_polynomial(warped_binary, xm_per_pix, ym_per_pix)
+# offset, left_radius, right_radius = calc_curvature_offset(warped_binary, left_x_base, right_x_base,
+#                                                           left_fit_cr, right_fit_cr)
+# radius = (left_radius + right_radius) / 2
+# radiusText = str.format("Radius of Curvature = {0:.1f}(m)", radius)
+# if offset < 0:
+#     offsetText = str.format("Vehicle is {0:.2f}m left of center", abs(offset))
+# else:
+#     offsetText = str.format("Vehicle is {0:.2f}m right of center", abs(offset))
+# cv.putText(result, radiusText, (100, 80), cv.FONT_HERSHEY_SIMPLEX, 2, color=[255, 255, 255], thickness=2)
+# cv.putText(result, offsetText, (100, 130), cv.FONT_HERSHEY_SIMPLEX, 2, color=[255, 255, 255], thickness=2)
 
-plt.imshow(result)
-plt.imsave("./output_images/final_output_test5.png", result)
-plt.show()
+# plt.imshow(result)
+# plt.imsave("./output_images/final_output_test5.png", result)
+# plt.show()
 
 # -------------------------- Task 8 ----------------------------------
 
@@ -255,16 +255,6 @@ def fit_polynomial_ex(binary_warped, xm_per_pix=1, ym_per_pix=1):
     # Get plot data
     ploty, left_fitx, right_fitx = get_plot_data(binary_warped, left_fit, right_fit)
 
-    # DEBUG
-    out_img = np.dstack((binary_warped, binary_warped, binary_warped))
-    out_img[lefty, leftx] = [255, 0, 0]
-    out_img[righty, rightx] = [0, 0, 255]
-
-    # # Plots the left and right polynomials on the lane lines
-    # ax3.imshow(out_img)
-    # ax3.plot(left_fitx, ploty, color='yellow')
-    # ax3.plot(right_fitx, ploty, color='yellow')
-
     # Calculate curvature radius and vehicle offset
     left_fit_cr = np.polyfit(lefty * ym_per_pix, leftx * xm_per_pix, 2)
     right_fit_cr = np.polyfit(righty * ym_per_pix, rightx * xm_per_pix, 2)
@@ -315,31 +305,12 @@ def process(image):
     :param image: original image from the video
     :return: marked image
     """
-    # DEBUG
-    global count
-    # img = cv.cvtColor(image, cv.COLOR_RGB2BGR)
-    # fname = "./debug_images/debug_{:0d}.png".format(count)
-    # cv.imwrite(fname, img)
-    # count += 1
-    #
-    # return image
 
     # Step 1: undistort the original image, using camera calibration data
     undistorted = calc_undistort(image, objpts, imgpts)
+
     # Step 2: use a filter of gradient and hls color space together, to generate a binary threshold image
     combo_binary, color_binary = hls_gradient_filter(undistorted)
-
-
-    # debug
-    # # plotting
-    # f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 6))
-    # ax1.set_title('Original image')
-    # ax1.imshow(undistorted)
-    #
-    # ax2.set_title('Stacked thresholds')
-    # ax2.imshow(color_binary)
-    #
-    # ax3.set_title('Combined S channel and gradient thresholds')
 
     # Step 3: use perspective transform to generate a binary image of bird's eye view
     warped_binary = cv.warpPerspective(combo_binary, M,
@@ -347,11 +318,6 @@ def process(image):
 
     # Step 4: fit a polynomial curve for each lane line, and save data into the Line() instances
     fit_polynomial_ex(warped_binary, x_meters_per_pix, y_meters_per_pix)
-
-    # DEBUG
-    # fname = "./debug_images/debug_{:0d}.png".format(count)
-    # plt.savefig(fname)
-    # count += 1
 
     # Step 5: mark the image with fit results
     result = mark_image(undistorted, warped_binary)
@@ -383,8 +349,8 @@ left_line_cache = Line()
 right_line_cache = Line()
 
 # Generate marked video
-# white_output = 'project_video_marked.mp4'
-# # clip1 = VideoFileClip("project_video.mp4").subclip(20, 28)
-# clip1 = VideoFileClip("project_video.mp4")
-# white_clip = clip1.fl_image(process)
-# white_clip.write_videofile(white_output, audio=False)
+white_output = 'project_video_marked.mp4'
+# clip1 = VideoFileClip("project_video.mp4").subclip(20, 28)
+clip1 = VideoFileClip("project_video.mp4")
+white_clip = clip1.fl_image(process)
+white_clip.write_videofile(white_output, audio=False)
